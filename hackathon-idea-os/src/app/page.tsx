@@ -13,8 +13,9 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-          Paste your GitHub username and a hackathon link. Get 10 personalized
-          project ideas and a complete hour-by-hour build plan — ready to win.
+          Paste your GitHub username, get matched with hackathons that fit your
+          profile, and turn the best one into 10 personalized project ideas plus
+          a complete hour-by-hour build plan.
         </p>
 
         <Link

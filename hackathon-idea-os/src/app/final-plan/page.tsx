@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
 import { ProgressBar } from "@/components/ProgressBar";
 import { ScoreBadge } from "@/components/ScoreBadge";
-import { FinalPlan, Idea } from "@/lib/types";
+import { FinalPlan, SessionState } from "@/lib/types";
 import { generateMarkdown, downloadMarkdown } from "@/lib/markdown";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -24,9 +24,44 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+function LoadingScreen({ label, subLabel }: { label: string; subLabel?: string }) {
+  return (
+    <main className="min-h-screen py-12 px-6">
+      <div className="max-w-3xl mx-auto">
+        <ProgressBar currentStep={5} />
+        <div className="text-center py-20">
+          <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500 text-sm">{label}</p>
+          {subLabel && <p className="text-gray-400 text-xs mt-2">{subLabel}</p>}
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export default function FinalPlanPage() {
   const router = useRouter();
-  const { state, update } = useSession();
+  const { state, update, hydrated } = useSession();
+
+  if (!hydrated) {
+    return <LoadingScreen label="Loading your plan..." />;
+  }
+
+  return <FinalPlanContent state={state} update={update} router={router} />;
+}
+
+type Update = (patch: Partial<SessionState>) => void;
+type Router = ReturnType<typeof useRouter>;
+
+function FinalPlanContent({
+  state,
+  update,
+  router,
+}: {
+  state: SessionState;
+  update: Update;
+  router: Router;
+}) {
   const [plan, setPlan] = useState<FinalPlan | null>(state.finalPlan);
   const [loading, setLoading] = useState(!state.finalPlan);
   const [error, setError] = useState("");
@@ -40,6 +75,7 @@ export default function FinalPlanPage() {
       return;
     }
 
+    const controller = new AbortController();
     fetch("/api/plan/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -48,17 +84,25 @@ export default function FinalPlanPage() {
         userProfile: state.userProfile,
         hackathon: state.selectedHackathon,
       }),
+      signal: controller.signal,
     })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to generate plan.");
+        return r.json();
+      })
       .then((p: FinalPlan) => {
         setPlan(p);
         update({ finalPlan: p });
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         setError("Failed to generate plan. Please try again.");
         setLoading(false);
       });
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleDownload() {
@@ -69,16 +113,10 @@ export default function FinalPlanPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen py-12 px-6">
-        <div className="max-w-3xl mx-auto">
-          <ProgressBar currentStep={5} />
-          <div className="text-center py-20">
-            <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-500 text-sm">Generating your complete build plan...</p>
-            <p className="text-gray-400 text-xs mt-2">This may take 30-60 seconds</p>
-          </div>
-        </div>
-      </main>
+      <LoadingScreen
+        label="Generating your complete build plan..."
+        subLabel="This may take 30-60 seconds"
+      />
     );
   }
 

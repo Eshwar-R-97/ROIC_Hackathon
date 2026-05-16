@@ -4,15 +4,51 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
 import { ProgressBar } from "@/components/ProgressBar";
-import { AdaptiveQuestion } from "@/lib/types";
+import { AdaptiveQuestion, SessionState } from "@/lib/types";
 
 export default function QuestionsPage() {
   const router = useRouter();
-  const { state, update } = useSession();
+  const { state, update, hydrated } = useSession();
+
+  if (!hydrated) {
+    return <LoadingScreen label="Loading questions..." />;
+  }
+
+  return <QuestionsContent state={state} update={update} router={router} />;
+}
+
+function LoadingScreen({ label }: { label: string }) {
+  return (
+    <main className="min-h-screen py-12 px-6">
+      <div className="max-w-2xl mx-auto">
+        <ProgressBar currentStep={3} />
+        <div className="text-center py-20">
+          <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500 text-sm">{label}</p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+type Update = (patch: Partial<SessionState>) => void;
+type Router = ReturnType<typeof useRouter>;
+
+function QuestionsContent({
+  state,
+  update,
+  router,
+}: {
+  state: SessionState;
+  update: Update;
+  router: Router;
+}) {
   const [questions, setQuestions] = useState<AdaptiveQuestion[]>(state.adaptiveQuestions || []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>(state.lifeAnswers || {});
-  const [currentAnswer, setCurrentAnswer] = useState("");
+  const [currentAnswer, setCurrentAnswer] = useState(
+    state.adaptiveQuestions[0] ? state.lifeAnswers[state.adaptiveQuestions[0].id] || "" : "",
+  );
   const [loading, setLoading] = useState(questions.length === 0);
   const [error, setError] = useState("");
 
@@ -23,6 +59,7 @@ export default function QuestionsPage() {
       return;
     }
 
+    const controller = new AbortController();
     fetch("/api/questions/life", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -30,17 +67,25 @@ export default function QuestionsPage() {
         userProfile: state.userProfile,
         hackathon: state.selectedHackathon,
       }),
+      signal: controller.signal,
     })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to generate questions.");
+        return r.json();
+      })
       .then((qs: AdaptiveQuestion[]) => {
         setQuestions(qs);
         update({ adaptiveQuestions: qs });
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         setError("Failed to generate questions. Please try again.");
         setLoading(false);
       });
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleNext() {
@@ -50,8 +95,9 @@ export default function QuestionsPage() {
     update({ lifeAnswers: updatedAnswers });
 
     if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setCurrentAnswer(answers[questions[currentIndex + 1]?.id] || "");
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
+      setCurrentAnswer(updatedAnswers[questions[nextIndex]?.id] || "");
     } else {
       update({ step: 4 });
       router.push("/ideas");
@@ -60,23 +106,14 @@ export default function QuestionsPage() {
 
   function handleBack() {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setCurrentAnswer(answers[questions[currentIndex - 1]?.id] || "");
+      const prevIndex = currentIndex - 1;
+      setCurrentIndex(prevIndex);
+      setCurrentAnswer(answers[questions[prevIndex]?.id] || "");
     }
   }
 
   if (loading) {
-    return (
-      <main className="min-h-screen py-12 px-6">
-        <div className="max-w-2xl mx-auto">
-          <ProgressBar currentStep={3} />
-          <div className="text-center py-20">
-            <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-500 text-sm">Generating personalized questions...</p>
-          </div>
-        </div>
-      </main>
-    );
+    return <LoadingScreen label="Generating personalized questions..." />;
   }
 
   if (error) {
@@ -96,7 +133,7 @@ export default function QuestionsPage() {
   const question = questions[currentIndex];
   if (!question) return null;
 
-  const progress = ((currentIndex) / questions.length) * 100;
+  const progress = (currentIndex / questions.length) * 100;
 
   return (
     <main className="min-h-screen py-12 px-6">

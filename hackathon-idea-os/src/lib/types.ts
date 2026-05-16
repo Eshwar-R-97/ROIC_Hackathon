@@ -35,6 +35,9 @@ export interface Hackathon {
   judgingCriteria: string[];
   rules: string[];
   theme: string | null;
+  summary?: string | null;
+  fitSummary?: string | null;
+  sourceUrl?: string | null;
 }
 
 export interface HackathonSearchResult {
@@ -43,6 +46,7 @@ export interface HackathonSearchResult {
   location: string | null;
   url: string | null;
   description: string | null;
+  fitSummary: string | null;
 }
 
 export interface AdaptiveQuestion {

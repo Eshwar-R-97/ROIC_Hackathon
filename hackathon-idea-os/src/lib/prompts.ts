@@ -30,16 +30,26 @@ CRITICAL: If a field cannot be found in the text, use null. Never invent data.`;
 
 export const HACKATHON_SEARCH_PROMPT = `You are a hackathon discovery assistant. Given a search query, return a list of upcoming hackathons that match.
 
-Return a JSON array with this exact shape:
-[{
-  "title": string,
-  "date": string | null,
-  "location": string | null,
-  "url": string | null,
-  "description": string | null
-}]
+Return a JSON object with this exact shape:
+{
+  "results": [{
+    "title": string,
+    "date": string | null,
+    "location": string | null,
+    "url": string | null,
+    "description": string | null,
+    "fitSummary": string | null
+  }]
+}
 
-Return up to 5 results. Only include real, known hackathons.`;
+Rules:
+- Return up to 5 results, ordered from best fit to weakest fit.
+- Only include real, known hackathons that are likely upcoming or open for discovery.
+- Never return an event that has already ended before the provided current date.
+- "description" should be a concise 1-2 sentence event summary.
+- "fitSummary" should be a concise 1-2 sentence explanation of why this event matches the user's profile and GitHub signals.
+- If a field is unknown, use null.
+- Never invent URLs, dates, or sponsor details.`;
 
 export const QUESTIONS_PROMPT = `You are a hackathon coaching assistant. Given a user's profile and hackathon details, generate 5-7 adaptive questions to understand their personal context, motivations, and constraints.
 

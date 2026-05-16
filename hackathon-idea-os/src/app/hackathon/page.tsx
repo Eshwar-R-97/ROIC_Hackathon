@@ -1,20 +1,36 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
 import { ProgressBar } from "@/components/ProgressBar";
 
 export default function HackathonPage() {
   const router = useRouter();
-  const { state, update } = useSession();
+  const { state, update, hydrated } = useSession();
   const hackathon = state.selectedHackathon;
 
-  if (!hackathon) {
-    router.push("/discover");
-    return null;
+  useEffect(() => {
+    if (hydrated && !hackathon) {
+      router.push("/discover");
+    }
+  }, [hydrated, hackathon, router]);
+
+  if (!hydrated || !hackathon) {
+    return (
+      <main className="min-h-screen py-12 px-6">
+        <div className="max-w-2xl mx-auto">
+          <ProgressBar currentStep={2} />
+          <div className="text-center py-20">
+            <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-500 text-sm">Loading hackathon...</p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
-  async function handleContinue() {
+  function handleContinue() {
     update({ step: 3 });
     router.push("/questions");
   }
@@ -36,6 +52,20 @@ export default function HackathonPage() {
         </div>
 
         <div className="space-y-5">
+          {(hackathon.summary || hackathon.theme) && (
+            <section className="bg-white border border-gray-200 rounded-lg p-5">
+              <h2 className="text-sm font-semibold text-gray-700 mb-3">Overview</h2>
+              <p className="text-sm text-gray-700 leading-relaxed">{hackathon.summary || hackathon.theme}</p>
+            </section>
+          )}
+
+          {hackathon.fitSummary && (
+            <section className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+              <h2 className="text-sm font-semibold text-gray-700 mb-3">Why This Fits You</h2>
+              <p className="text-sm text-gray-700 leading-relaxed">{hackathon.fitSummary}</p>
+            </section>
+          )}
+
           {hackathon.tracks.length > 0 && (
             <section className="bg-white border border-gray-200 rounded-lg p-5">
               <h2 className="text-sm font-semibold text-gray-700 mb-3">Tracks</h2>
