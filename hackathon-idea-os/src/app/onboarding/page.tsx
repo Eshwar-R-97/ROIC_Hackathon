@@ -72,7 +72,18 @@ function OnboardingForm({ state, update, router }: { state: SessionState; update
       });
       if (!res.ok) throw new Error("GitHub user not found.");
       const githubSignals = await res.json();
-      update({ userProfile, githubSignals, selectedHackathon: null, lifeAnswers: {}, adaptiveQuestions: [], generatedIdeas: [], selectedIdeaId: null, finalPlan: null, step: 1 });
+      update({
+        userProfile,
+        githubSignals,
+        selectedHackathon: null,
+        lifeAnswers: {},
+        adaptiveQuestions: [],
+        generatedIdeas: [],
+        fitGraph: null,
+        selectedIdeaId: null,
+        finalPlan: null,
+        step: 1,
+      });
       router.push("/discover");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -84,7 +95,7 @@ function OnboardingForm({ state, update, router }: { state: SessionState; update
       <div className="max-w-2xl mx-auto">
         <ProgressBar currentStep={0} />
         <h1 className="text-2xl font-bold text-[#18181b] mb-1">Your Profile</h1>
-        <p className="text-zinc-500 text-sm mb-8">We'll analyze your GitHub and tailor everything to you.</p>
+        <p className="text-zinc-500 text-sm mb-8">We&apos;ll analyze your GitHub and tailor everything to you.</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

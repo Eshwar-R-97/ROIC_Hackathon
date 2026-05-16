@@ -25,6 +25,8 @@ export interface HackathonSponsor {
   prizes: string[];
 }
 
+export type HackathonExtractionStatus = "full" | "fallback";
+
 export interface Hackathon {
   title: string;
   date: string | null;
@@ -38,6 +40,7 @@ export interface Hackathon {
   summary?: string | null;
   fitSummary?: string | null;
   sourceUrl?: string | null;
+  extractionStatus?: HackathonExtractionStatus;
 }
 
 export interface HackathonSearchResult {
@@ -71,6 +74,49 @@ export interface Idea {
   feasibilityScore: number;
   noveltyScore: number;
   sponsorScore: number;
+}
+
+export type FitGraphColumn = "signal" | "hackathon" | "idea";
+export type FitGraphNodeKind =
+  | "language"
+  | "framework"
+  | "project_theme"
+  | "interest"
+  | "skill"
+  | "track"
+  | "sponsor_api"
+  | "sponsor_prize"
+  | "sponsor"
+  | "theme"
+  | "judging"
+  | "idea";
+
+export interface FitGraphNode {
+  id: string;
+  label: string;
+  column: FitGraphColumn;
+  kind: FitGraphNodeKind;
+  description: string | null;
+  ideaId?: string | null;
+}
+
+export interface FitGraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  weight: number;
+  reason: string;
+}
+
+export interface FitGraph {
+  nodes: FitGraphNode[];
+  edges: FitGraphEdge[];
+  topIdeaIds: string[];
+}
+
+export interface IdeasResponse {
+  ideas: Idea[];
+  fitGraph: FitGraph | null;
 }
 
 export interface TimelineEntry {
@@ -115,6 +161,7 @@ export interface SessionState {
   lifeAnswers: Record<string, string>;
   adaptiveQuestions: AdaptiveQuestion[];
   generatedIdeas: Idea[];
+  fitGraph: FitGraph | null;
   selectedIdeaId: string | null;
   finalPlan: FinalPlan | null;
 }

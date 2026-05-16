@@ -57,12 +57,23 @@ function QuestionsContent({ state, update, router }: { state: SessionState; upda
   function handleNext() {
     const question = questions[currentIndex];
     const updatedAnswers = { ...answers, [question.id]: currentAnswer };
-    setAnswers(updatedAnswers); update({ lifeAnswers: updatedAnswers });
+    setAnswers(updatedAnswers);
     if (currentIndex < questions.length - 1) {
+      update({ lifeAnswers: updatedAnswers });
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
       setCurrentAnswer(updatedAnswers[questions[nextIndex]?.id] || "");
-    } else { update({ step: 4 }); router.push("/ideas"); }
+    } else {
+      update({
+        lifeAnswers: updatedAnswers,
+        generatedIdeas: [],
+        fitGraph: null,
+        selectedIdeaId: null,
+        finalPlan: null,
+        step: 4,
+      });
+      router.push("/ideas");
+    }
   }
 
   function handleBack() {

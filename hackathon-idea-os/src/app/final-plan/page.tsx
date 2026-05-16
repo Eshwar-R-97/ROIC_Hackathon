@@ -27,7 +27,7 @@ function LoadingScreen({ label, subLabel }: { label: string; subLabel?: string }
   return (
     <PageShell>
       <div className="max-w-3xl mx-auto">
-        <ProgressBar currentStep={5} />
+        <ProgressBar currentStep={6} />
         <div className="text-center py-20">
           <div className="w-8 h-8 border-2 border-[#f97316] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-zinc-500 text-sm">{label}</p>
@@ -52,12 +52,13 @@ function FinalPlanContent({ state, update, router }: { state: SessionState; upda
   const [plan, setPlan] = useState<FinalPlan | null>(state.finalPlan);
   const [loading, setLoading] = useState(!state.finalPlan);
   const [error, setError] = useState("");
+  const returnRoute = state.fitGraph ? "/fit-graph" : "/ideas";
 
   const selectedIdea = state.generatedIdeas.find((i) => i.id === state.selectedIdeaId) || null;
 
   useEffect(() => {
     if (plan) return;
-    if (!selectedIdea || !state.userProfile || !state.selectedHackathon) { router.push("/ideas"); return; }
+    if (!selectedIdea || !state.userProfile || !state.selectedHackathon) { router.push(returnRoute); return; }
     const controller = new AbortController();
     fetch("/api/plan/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ selectedIdea, userProfile: state.userProfile, hackathon: state.selectedHackathon }), signal: controller.signal })
       .then((r) => { if (!r.ok) throw new Error("Failed to generate plan."); return r.json(); })
@@ -79,9 +80,9 @@ function FinalPlanContent({ state, update, router }: { state: SessionState; upda
     return (
       <PageShell>
         <div className="max-w-3xl mx-auto">
-          <ProgressBar currentStep={5} />
+          <ProgressBar currentStep={6} />
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">{error || "Plan not found."}</div>
-          <button onClick={() => router.push("/ideas")} className="mt-4 text-sm text-zinc-600 hover:underline">← Go back</button>
+          <button onClick={() => router.push(returnRoute)} className="mt-4 text-sm text-zinc-600 hover:underline">← Go back</button>
         </div>
       </PageShell>
     );
@@ -90,7 +91,7 @@ function FinalPlanContent({ state, update, router }: { state: SessionState; upda
   return (
     <PageShell>
       <div className="max-w-3xl mx-auto">
-        <ProgressBar currentStep={5} />
+        <ProgressBar currentStep={6} />
 
         <div className="flex items-start justify-between mb-6 gap-4">
           <div>
@@ -240,7 +241,9 @@ function FinalPlanContent({ state, update, router }: { state: SessionState; upda
         </div>
 
         <div className="mt-8 flex items-center justify-between">
-          <button onClick={() => router.push("/ideas")} className="text-sm text-zinc-400 hover:text-zinc-600">← Pick a different idea</button>
+          <button onClick={() => router.push(returnRoute)} className="text-sm text-zinc-400 hover:text-zinc-600">
+            ← Pick a different idea
+          </button>
           <button onClick={handleDownload}
             className="bg-[#f97316] text-white px-6 py-3 rounded-lg text-sm font-bold hover:bg-orange-500 transition-colors flex items-center gap-2">
             ↓ Download Build Plan (.md)

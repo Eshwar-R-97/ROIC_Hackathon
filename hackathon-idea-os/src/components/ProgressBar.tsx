@@ -1,4 +1,4 @@
-const STEPS = ["Profile", "Discover", "Hackathon", "Questions", "Ideas", "Plan"];
+const STEPS = ["Profile", "Discover", "Hackathon", "Questions", "Ideas", "Fit Graph", "Plan"];
 
 interface ProgressBarProps {
   currentStep: number;

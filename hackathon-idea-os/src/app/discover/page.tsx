@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProgressBar } from "@/components/ProgressBar";
 import { PageShell } from "@/components/PageShell";
+import { buildHackathonFromSearchResult } from "@/lib/hackathons";
 import { useSession } from "@/lib/session";
 import { Hackathon, HackathonSearchResult, GitHubSignals, UserProfile } from "@/lib/types";
 
@@ -24,10 +25,6 @@ async function fetchHackathonSearchResults(query: string, userProfile: UserProfi
   });
   if (!res.ok) throw new Error("Search failed. Try refining the query or paste a URL instead.");
   return (await res.json()) as HackathonSearchResult[];
-}
-
-function buildHackathonFromSearchResult(result: HackathonSearchResult): Hackathon {
-  return { title: result.title, date: result.date, location: result.location, tracks: [], sponsors: [], prizes: [], judgingCriteria: [], rules: [], theme: result.description, summary: result.description, fitSummary: result.fitSummary, sourceUrl: result.url };
 }
 
 export default function DiscoverPage() {
@@ -62,12 +59,25 @@ export default function DiscoverPage() {
   }, [hydrated, githubSignals, router, userProfile]);
 
   function selectHackathon(hackathon: Hackathon) {
-    update({ selectedHackathon: hackathon, lifeAnswers: {}, adaptiveQuestions: [], generatedIdeas: [], selectedIdeaId: null, finalPlan: null, step: 2 });
+    update({
+      selectedHackathon: hackathon,
+      lifeAnswers: {},
+      adaptiveQuestions: [],
+      generatedIdeas: [],
+      fitGraph: null,
+      selectedIdeaId: null,
+      finalPlan: null,
+      step: 2,
+    });
     router.push("/hackathon");
   }
 
   async function extractHackathon(sourceUrl: string) {
-    const res = await fetch("/api/hackathons/extract", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lumaUrl: sourceUrl }) });
+    const res = await fetch("/api/hackathons/extract", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: sourceUrl }),
+    });
     if (!res.ok) throw new Error("Could not fetch hackathon page.");
     const hackathon = (await res.json()) as Hackathon;
     return { ...hackathon, sourceUrl };
@@ -91,13 +101,7 @@ export default function DiscoverPage() {
 
   async function selectSearchResult(result: HackathonSearchResult) {
     setError("");
-    if (result.url) {
-      setUrl(result.url); setLoadingState("extract");
-      try { selectHackathon({ ...(await extractHackathon(result.url)), summary: result.description, fitSummary: result.fitSummary }); }
-      catch { selectHackathon(buildHackathonFromSearchResult(result)); }
-      finally { setLoadingState("idle"); }
-      return;
-    }
+
     selectHackathon(buildHackathonFromSearchResult(result));
   }
 
