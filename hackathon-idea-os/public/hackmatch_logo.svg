@@ -1,0 +1,17 @@
+<svg width="220" height="220" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>HackMatch logo</title>
+  <desc>Two thick uprights with shorter thin white inner eyes, and an orange chevron handshake</desc>
+
+  <!-- Left upright -->
+  <rect x="60" y="30" width="24" height="160" rx="5" fill="#18181b"/>
+  <!-- Right upright -->
+  <rect x="136" y="30" width="24" height="160" rx="5" fill="#18181b"/>
+
+  <!-- Left eye -->
+  <rect x="77" y="40" width="5" height="14" rx="2.5" fill="#ffffff"/>
+  <!-- Right eye -->
+  <rect x="138" y="40" width="5" height="14" rx="2.5" fill="#ffffff"/>
+
+  <!-- Chevron handshake -->
+  <polygon points="60,72 110,110 160,72 160,92 110,130 60,92" fill="#f97316"/>
+</svg>

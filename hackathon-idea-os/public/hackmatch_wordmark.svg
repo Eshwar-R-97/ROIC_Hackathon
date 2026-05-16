@@ -1,0 +1,26 @@
+<svg width="620" height="160" viewBox="0 0 620 160" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>HackMatch wordmark</title>
+  <desc>HackMatch wordmark using the logo mark as the H</desc>
+
+  <!-- Left upright -->
+  <rect x="20" y="16" width="20" height="128" rx="4" fill="#18181b"/>
+  <!-- Right upright -->
+  <rect x="72" y="16" width="20" height="128" rx="4" fill="#18181b"/>
+  <!-- Left eye -->
+  <rect x="33" y="22" width="4" height="11" rx="2" fill="#ffffff"/>
+  <!-- Right eye -->
+  <rect x="73" y="22" width="4" height="11" rx="2" fill="#ffffff"/>
+  <!-- Chevron -->
+  <polygon points="20,56 56,84 92,56 92,72 56,90 20,72" fill="#f97316"/>
+
+  <!-- ackMatch text -->
+  <text
+    x="104"
+    y="104"
+    font-family="system-ui, -apple-system, sans-serif"
+    font-size="80"
+    font-weight="700"
+    letter-spacing="-2"
+    fill="#18181b"
+  >ackMatch</text>
+</svg>

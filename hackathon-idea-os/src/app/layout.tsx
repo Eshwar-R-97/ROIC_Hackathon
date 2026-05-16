@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hackathon Idea OS",
-  description: "Turn your GitHub + a hackathon into a winning project plan.",
+  title: "HackMatch",
+  description: "Find your perfect hackathon match. GitHub + hackathon → winning project plan.",
 };
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body
-        className="min-h-full flex flex-col bg-[#FAFAF9] text-[#1A1A1A]"
+        className="min-h-full flex flex-col bg-white text-[#18181b]"
         suppressHydrationWarning
       >
         {children}
