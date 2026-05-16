@@ -1,14 +1,54 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
 import { ProgressBar } from "@/components/ProgressBar";
 import { PageShell } from "@/components/PageShell";
+import { Hackathon } from "@/lib/types";
+import { mergeHackathonDetails } from "@/lib/hackathons";
 
 export default function HackathonPage() {
   const router = useRouter();
   const { state, update } = useSession();
   const hackathon = state.selectedHackathon;
+  const [isEnriching, setIsEnriching] = useState(false);
+  const attemptedSourceUrl = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!hackathon) return;
+    if (!hackathon.sourceUrl || hackathon.extractionStatus !== "fallback") return;
+    if (attemptedSourceUrl.current === hackathon.sourceUrl) return;
+
+    const controller = new AbortController();
+    attemptedSourceUrl.current = hackathon.sourceUrl;
+    setIsEnriching(true);
+
+    fetch("/api/hackathons/extract", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: hackathon.sourceUrl,
+        fallbackHackathon: hackathon,
+      }),
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Could not enrich hackathon details.");
+        return response.json();
+      })
+      .then((nextHackathon: Hackathon) => {
+        update({ selectedHackathon: mergeHackathonDetails(hackathon, nextHackathon) });
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      })
+      .finally(() => {
+        setIsEnriching(false);
+      });
+
+    return () => controller.abort();
+  }, [hackathon, update]);
 
   if (!hackathon) {
     router.push("/discover");
@@ -37,6 +77,28 @@ export default function HackathonPage() {
         </div>
 
         <div className="space-y-4">
+          {hackathon.summary && (
+            <section className="bg-white border border-zinc-200 rounded-lg p-5">
+              <h2 className="text-xs font-bold uppercase tracking-wide text-orange-600 mb-3">Overview</h2>
+              <p className="text-sm text-zinc-600 leading-relaxed">{hackathon.summary}</p>
+            </section>
+          )}
+
+          {hackathon.fitSummary && (
+            <section className="bg-orange-50 border border-orange-100 rounded-lg p-5">
+              <h2 className="text-xs font-bold uppercase tracking-wide text-orange-600 mb-3">Why It Fits You</h2>
+              <p className="text-sm text-zinc-700 leading-relaxed">{hackathon.fitSummary}</p>
+            </section>
+          )}
+
+          {hackathon.extractionStatus === "fallback" && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-sm text-orange-800">
+              {isEnriching
+                ? "Using summary-level event data for now while we pull richer event details in the background."
+                : "Using summary-level event data. You can still continue, and idea generation plus the fit graph will still work."}
+            </div>
+          )}
+
           {hackathon.tracks.length > 0 && (
             <section className="bg-white border border-zinc-200 rounded-lg p-5">
               <h2 className="text-xs font-bold uppercase tracking-wide text-orange-600 mb-3">Tracks</h2>

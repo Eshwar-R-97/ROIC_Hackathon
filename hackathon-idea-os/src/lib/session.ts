@@ -23,6 +23,7 @@ function defaultState(sessionId: string): SessionState {
     lifeAnswers: {},
     adaptiveQuestions: [],
     generatedIdeas: [],
+    fitGraph: null,
     selectedIdeaId: null,
     finalPlan: null,
   };

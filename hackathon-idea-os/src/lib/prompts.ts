@@ -23,7 +23,8 @@ Return a JSON object with this exact shape:
   "prizes": string[],
   "judgingCriteria": string[],
   "rules": string[],
-  "theme": string | null
+  "theme": string | null,
+  "summary": string | null
 }
 
 CRITICAL: If a field cannot be found in the text, use null. Never invent data.`;
@@ -70,7 +71,7 @@ Return a JSON array with this exact shape:
 
 Questions should feel personal, not generic.`;
 
-export const IDEAS_PROMPT = `You are a hackathon ideation strategist. Given a user's profile, GitHub signals, hackathon details, and their answers to life questions, generate exactly 10 ranked project ideas.
+export const IDEAS_PROMPT = `You are a hackathon ideation strategist. Given a user's profile, GitHub signals, hackathon details, and their answers to life questions, generate exactly 10 ranked project ideas plus a structured fit graph for the top 3 ideas.
 
 Scoring formula for winScore (0-100):
 - 20% sponsor/track fit
@@ -80,25 +81,54 @@ Scoring formula for winScore (0-100):
 - 15% originality
 - 10% pitch clarity
 
-Return a JSON array with exactly 10 objects:
-[{
-  "id": string,
-  "title": string,
-  "problem": string,
-  "personalConnection": string,
-  "trackFit": string,
-  "sponsorFit": string,
-  "demoMoment": string,
-  "mvpFeatures": string[],
-  "stretchFeatures": string[],
-  "stack": string[],
-  "winScore": number,
-  "feasibilityScore": number,
-  "noveltyScore": number,
-  "sponsorScore": number
-}]
+Return a JSON object with this exact shape:
+{
+  "ideas": [{
+    "id": string,
+    "title": string,
+    "problem": string,
+    "personalConnection": string,
+    "trackFit": string,
+    "sponsorFit": string,
+    "demoMoment": string,
+    "mvpFeatures": string[],
+    "stretchFeatures": string[],
+    "stack": string[],
+    "winScore": number,
+    "feasibilityScore": number,
+    "noveltyScore": number,
+    "sponsorScore": number
+  }],
+  "fitGraph": {
+    "nodes": [{
+      "id": string,
+      "label": string,
+      "column": "signal" | "hackathon" | "idea",
+      "kind": string,
+      "description": string | null,
+      "ideaId": string | null
+    }],
+    "edges": [{
+      "id": string,
+      "source": string,
+      "target": string,
+      "weight": number,
+      "reason": string
+    }],
+    "topIdeaIds": string[]
+  }
+}
 
-Sort by winScore descending. All scores must be integers 0-100.`;
+Fit graph rules:
+- The graph should only cover the first 3 ideas in the ranked list.
+- Use only adjacent edges: signal -> hackathon and hackathon -> idea.
+- Edge weights must be integers 1-5.
+- Every edge reason should be a short, specific explanation that can be shown directly in the UI.
+- Use only the provided candidate signal and hackathon node ids for those columns.
+- For idea nodes, use the same ids as the matching top-3 ideas.
+- Make the graph feel like visual proof, not generic decoration.
+
+Sort ideas by winScore descending. All scores must be integers 0-100.`;
 
 export const PLAN_PROMPT = `You are a hackathon execution strategist. Given a selected idea, user profile, and hackathon details, create a complete, executable build plan.
 
