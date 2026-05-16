@@ -1,0 +1,169 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/session";
+import { ProgressBar } from "@/components/ProgressBar";
+import { AdaptiveQuestion } from "@/lib/types";
+
+export default function QuestionsPage() {
+  const router = useRouter();
+  const { state, update } = useSession();
+  const [questions, setQuestions] = useState<AdaptiveQuestion[]>(state.adaptiveQuestions || []);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>(state.lifeAnswers || {});
+  const [currentAnswer, setCurrentAnswer] = useState("");
+  const [loading, setLoading] = useState(questions.length === 0);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (questions.length > 0) return;
+    if (!state.userProfile || !state.selectedHackathon) {
+      router.push("/onboarding");
+      return;
+    }
+
+    fetch("/api/questions/life", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userProfile: state.userProfile,
+        hackathon: state.selectedHackathon,
+      }),
+    })
+      .then((r) => r.json())
+      .then((qs: AdaptiveQuestion[]) => {
+        setQuestions(qs);
+        update({ adaptiveQuestions: qs });
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Failed to generate questions. Please try again.");
+        setLoading(false);
+      });
+  }, []);
+
+  function handleNext() {
+    const question = questions[currentIndex];
+    const updatedAnswers = { ...answers, [question.id]: currentAnswer };
+    setAnswers(updatedAnswers);
+    update({ lifeAnswers: updatedAnswers });
+
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setCurrentAnswer(answers[questions[currentIndex + 1]?.id] || "");
+    } else {
+      update({ step: 4 });
+      router.push("/ideas");
+    }
+  }
+
+  function handleBack() {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      setCurrentAnswer(answers[questions[currentIndex - 1]?.id] || "");
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen py-12 px-6">
+        <div className="max-w-2xl mx-auto">
+          <ProgressBar currentStep={3} />
+          <div className="text-center py-20">
+            <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-500 text-sm">Generating personalized questions...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen py-12 px-6">
+        <div className="max-w-2xl mx-auto">
+          <ProgressBar currentStep={3} />
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">{error}</div>
+          <button onClick={() => router.push("/hackathon")} className="mt-4 text-sm text-gray-600 hover:underline">
+            ← Go back
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  const question = questions[currentIndex];
+  if (!question) return null;
+
+  const progress = ((currentIndex) / questions.length) * 100;
+
+  return (
+    <main className="min-h-screen py-12 px-6">
+      <div className="max-w-2xl mx-auto">
+        <ProgressBar currentStep={3} />
+
+        <div className="mb-6">
+          <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
+            <span>Question {currentIndex + 1} of {questions.length}</span>
+            <span>{Math.round(progress)}% complete</span>
+          </div>
+          <div className="h-1 bg-gray-100 rounded-full">
+            <div
+              className="h-full bg-gray-900 rounded-full transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-8 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">{question.text}</h2>
+
+          {question.type === "choice" && question.options ? (
+            <div className="space-y-2">
+              {question.options.map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setCurrentAnswer(option)}
+                  className={`w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
+                    currentAnswer === option
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <textarea
+              value={currentAnswer}
+              onChange={(e) => setCurrentAnswer(e.target.value)}
+              placeholder="Your answer..."
+              rows={4}
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
+            />
+          )}
+        </div>
+
+        <div className="flex gap-3">
+          {currentIndex > 0 && (
+            <button
+              onClick={handleBack}
+              className="px-4 py-2.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:border-gray-400"
+            >
+              ← Back
+            </button>
+          )}
+          <button
+            onClick={handleNext}
+            disabled={!currentAnswer.trim()}
+            className="flex-1 bg-gray-900 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {currentIndex < questions.length - 1 ? "Next →" : "Generate Ideas →"}
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}
