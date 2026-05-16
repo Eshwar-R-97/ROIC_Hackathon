@@ -3,6 +3,29 @@ import OpenAI from "openai";
 import { HACKATHON_SEARCH_PROMPT } from "@/lib/prompts";
 import { HackathonSearchResult } from "@/lib/types";
 
+const PINNED_HACKATHONS: HackathonSearchResult[] = [
+  {
+    title: "USAII Global AI Hackathon 2026",
+    date: "June 14–21, 2026",
+    location: "Virtual",
+    url: "https://aihackathon.usaii.org/",
+    description:
+      "A global virtual student competition to build real-world AI solutions. Open to high school, undergraduate, and graduate students. $15,000+ in prizes and scholarships across three tracks. Teams of 2–5; no prior hackathon experience required.",
+    fitSummary:
+      "Great for AI builders — no-code and low-code projects welcome, with dedicated tracks for every level.",
+  },
+  {
+    title: "MLH Global Hack Week: Hacking for Good",
+    date: "June 12–18, 2026",
+    location: "Virtual",
+    url: "https://ghw.mlh.io/",
+    description:
+      "A free, week-long MLH-hosted hackathon open to anyone, anywhere. Focused on building projects that make a positive impact on the world. Part of the Major League Hacking 2026 season.",
+    fitSummary:
+      "Free and beginner-friendly — ideal for first-timers or anyone wanting to build something meaningful.",
+  },
+];
+
 function getStartOfToday() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -94,5 +117,11 @@ Return as JSON with key "results" containing the array.`,
       fitSummary: result.fitSummary ?? null,
     }));
 
-  return NextResponse.json(filteredResults);
+  // Pinned hackathons always appear first; deduplicate by title.
+  const pinnedTitles = new Set(PINNED_HACKATHONS.map((h) => h.title.toLowerCase()));
+  const dedupedResults = filteredResults.filter(
+    (r) => !pinnedTitles.has(r.title.toLowerCase())
+  );
+
+  return NextResponse.json([...PINNED_HACKATHONS, ...dedupedResults]);
 }
