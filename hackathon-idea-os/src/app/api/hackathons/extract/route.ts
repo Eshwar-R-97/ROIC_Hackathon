@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { HACKATHON_EXTRACT_PROMPT } from "@/lib/prompts";
+import { PINNED_HACKATHON_DETAILS } from "@/lib/pinnedHackathons";
 
 export async function POST(req: NextRequest) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const { lumaUrl, rawText } = await req.json();
+
+  if (lumaUrl && PINNED_HACKATHON_DETAILS[lumaUrl]) {
+    return NextResponse.json(PINNED_HACKATHON_DETAILS[lumaUrl]);
+  }
 
   let content = rawText || "";
 
